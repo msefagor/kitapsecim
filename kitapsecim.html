@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kitap Seçimi · ULT-203</title>
+<meta name="description" content="ULT-203 Stok ve Envanter Yönetimi dersi için kitap seçim sistemi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f5f1e8; --paper-2:#ece6d8; --card:#fffdf8; --ink:#1c2633; --ink-2:#4a5566; --ink-3:#7c8595;
+  --line:#ddd5c4; --accent:#7d2a35; --accent-2:#a33d4a; --brass:#a87b3a; --ok:#2f6b4f; --ok-bg:#e4efe8;
+  --shadow:0 1px 2px rgba(28,38,51,.06),0 8px 24px -12px rgba(28,38,51,.18);
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 Manrope,system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(circle at 1px 1px,rgba(28,38,51,.05) 1px,transparent 0);background-size:22px 22px}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+/* Header */
+header.top{background:var(--ink);color:#f5f1e8;position:relative;overflow:hidden}
+header.top::after{content:"";position:absolute;inset:auto 0 0 0;height:4px;background:linear-gradient(90deg,var(--accent),var(--brass))}
+.top-inner{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:34px 0 30px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c9b48d;font-weight:600}
+h1{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:clamp(28px,4.2vw,44px);line-height:1.08;margin:8px 0 10px;letter-spacing:-.01em}
+.sub{color:#b9c0cc;font-size:14px;margin:0}
+.admin-btn{flex:none;display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(245,241,232,.3);
+  color:#f5f1e8;padding:9px 14px;border-radius:999px;cursor:pointer;font-size:13px;font-weight:600;transition:.2s}
+.admin-btn:hover{background:rgba(245,241,232,.1);border-color:rgba(245,241,232,.6)}
+.stats{display:flex;gap:28px;flex-wrap:wrap;padding-bottom:28px}
+.stat b{display:block;font-family:Fraunces,serif;font-size:28px;font-weight:600;line-height:1}
+.stat span{font-size:12px;color:#b9c0cc;letter-spacing:.04em}
+.bar{height:6px;background:rgba(255,255,255,.12);border-radius:9px;overflow:hidden;width:220px;margin-top:10px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brass),#e0c48f);width:0;transition:width .6s}
+
+.banner{background:#fff4dc;border-bottom:1px solid #ecd9ae;color:#6b4b12;font-size:13px;padding:9px 0}
+
+/* Steps */
+.steps{display:grid;grid-template-columns:1fr;gap:16px;margin:28px 0 8px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+.step-h{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.num{width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.step-h h2{font-family:Fraunces,serif;font-size:20px;font-weight:600;margin:0}
+.step-h p{margin:0;color:var(--ink-3);font-size:13px}
+.combo{position:relative;max-width:520px}
+.field{width:100%;padding:12px 14px 12px 40px;border:1px solid var(--line);border-radius:10px;background:#fff;outline:none;transition:.15s}
+.field:focus{border-color:var(--ink-2);box-shadow:0 0 0 3px rgba(28,38,51,.08)}
+.combo svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink-3)}
+.dropdown{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--shadow);max-height:300px;overflow:auto;display:none}
+.dropdown.open{display:block}
+.opt{padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.opt:hover,.opt.hl{background:var(--paper)}
+.opt.dis{color:var(--ink-3);cursor:not-allowed;background:none}
+.opt small{color:var(--ink-3);font-size:12px}
+.chosen{display:none;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;background:var(--ok-bg);border:1px solid #c5ddcf;max-width:520px}
+.chosen.show{display:flex}
+.chosen b{flex:1}
+.link{background:none;border:0;color:var(--accent);font-weight:600;cursor:pointer;font-size:13px;padding:0}
+
+/* Tabs + toolbar */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:30px 0 18px;overflow-x:auto}
+.tab{background:none;border:0;padding:12px 16px;cursor:pointer;font-weight:600;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab.on{color:var(--ink);border-color:var(--accent)}
+.tab .c{display:inline-block;margin-left:6px;background:var(--paper-2);border-radius:99px;padding:0 8px;font-size:12px;color:var(--ink-2)}
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.toolbar .combo{flex:1;min-width:220px;max-width:none}
+.seg{display:inline-flex;background:var(--paper-2);border-radius:10px;padding:3px}
+.seg button{border:0;background:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink-2)}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+/* Book grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;padding-bottom:60px}
+.book{position:relative;display:flex;flex-direction:column;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:16px 16px 14px 24px;min-height:150px;cursor:pointer;transition:transform .18s,box-shadow .18s,border-color .18s;overflow:hidden}
+.book::before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:var(--spine)}
+.book::after{content:"";position:absolute;left:8px;top:0;bottom:0;width:1px;background:rgba(0,0,0,.08)}
+.book:hover:not(.taken){transform:translateY(-3px);box-shadow:var(--shadow);border-color:#cbbfa6}
+.book:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.book .no{font-size:11px;letter-spacing:.12em;color:var(--ink-3);font-weight:700}
+.book h3{font-family:Fraunces,serif;font-size:18px;font-weight:600;line-height:1.2;margin:6px 0 4px}
+.book .au{color:var(--ink-2);font-size:13.5px}
+.book .foot{margin-top:auto;padding-top:14px;display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 10px;font-weight:600}
+.pill.free{background:var(--ok-bg);color:var(--ok)}
+.pill.free::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.book .go{color:var(--accent);font-weight:700;opacity:0;transition:.18s}
+.book:hover .go{opacity:1}
+.book.taken{cursor:default;background:#f2eee5}
+.book.taken::before{background:#b8b2a5}
+.book.taken h3,.book.taken .au{color:var(--ink-3)}
+.stamp{margin-top:auto;padding-top:12px;font-size:12px;color:var(--ink-2);border-top:1px dashed var(--line);display:flex;justify-content:space-between;gap:8px}
+.stamp b{color:var(--accent);font-weight:700}
+.empty{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--ink-3)}
+
+/* Tables */
+.tbl-wrap{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:auto;margin-bottom:60px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:700;padding:12px 16px;border-bottom:1px solid var(--line);background:#faf7f0;white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid #eee7da;vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.t{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink-2)}
+.tag{display:inline-block;font-size:12px;font-weight:600;border-radius:99px;padding:2px 10px}
+.tag.y{background:var(--ok-bg);color:var(--ok)}
+.tag.n{background:var(--paper-2);color:var(--ink-3)}
+.muted{color:var(--ink-3)}
+
+/* Modal */
+.scrim{position:fixed;inset:0;background:rgba(18,24,33,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.scrim.open{display:flex;animation:fade .18s}
+@keyframes fade{from{opacity:0}}
+.modal{background:var(--card);border-radius:16px;width:100%;max-width:460px;box-shadow:0 30px 80px -20px rgba(0,0,0,.45);overflow:hidden;animation:pop .22s cubic-bezier(.2,.9,.3,1.2)}
+.modal.wide{max-width:1040px;max-height:92vh;display:flex;flex-direction:column}
+@keyframes pop{from{transform:translateY(10px) scale(.98);opacity:0}}
+.mh{padding:20px 22px 0}
+.mh h3{font-family:Fraunces,serif;font-size:22px;margin:0 0 4px;font-weight:600}
+.mh p{margin:0;color:var(--ink-3);font-size:13.5px}
+.mb{padding:18px 22px}
+.mf{padding:14px 22px 20px;display:flex;gap:10px;justify-content:flex-end}
+.summary{background:var(--paper);border-radius:10px;padding:14px;display:grid;gap:8px;font-size:14px}
+.summary div{display:flex;justify-content:space-between;gap:12px}
+.summary span{color:var(--ink-3)}
+.summary b{text-align:right}
+label.lb{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+.inp{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:10px;outline:none;background:#fff}
+.inp:focus{border-color:var(--ink-2);box-shadow:0 0 0 3px rgba(28,38,51,.08)}
+.hint{font-size:12px;color:var(--ink-3);margin-top:6px}
+.err{color:var(--accent-2);font-size:13px;margin-top:8px;min-height:18px}
+.btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;cursor:pointer;transition:.15s}
+.btn.pri{background:var(--accent);color:#fff}
+.btn.pri:hover{background:var(--accent-2)}
+.btn.pri:disabled{opacity:.6;cursor:wait}
+.btn.ghost{background:var(--paper-2);color:var(--ink)}
+.btn.ghost:hover{background:#e3dccb}
+.btn.sm{padding:7px 12px;font-size:12.5px;border-radius:8px}
+.btn.line{background:#fff;border:1px solid var(--line);color:var(--accent)}
+.btn.line:hover{border-color:var(--accent)}
+
+.admin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px;border-bottom:1px solid var(--line)}
+.admin-body{overflow:auto;padding:18px 22px 22px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--paper);border-radius:10px;padding:12px 14px}
+.kpi b{display:block;font-family:Fraunces,serif;font-size:24px;font-weight:600}
+.kpi span{font-size:12px;color:var(--ink-3)}
+.x{background:none;border:0;cursor:pointer;color:var(--ink-3);padding:6px;border-radius:8px}
+.x:hover{background:var(--paper-2);color:var(--ink)}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;
+  font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:80;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+footer{border-top:1px solid var(--line);padding:22px 0 30px;color:var(--ink-3);font-size:12.5px}
+.hide{display:none!important}
+
+@media (max-width:640px){
+  .top-inner{flex-direction:column}
+  .admin-btn{align-self:flex-start}
+  .stats{gap:20px}
+  .bar{width:160px}
+  .grid{grid-template-columns:1fr}
+  .mf{flex-direction:column-reverse}
+  .mf .btn{width:100%}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="top-inner">
+      <div>
+        <div class="eyebrow">Bulancak Kadir Karabaş UBYO · Lojistik Yönetimi</div>
+        <h1>Dönem Kitabı Seçimi</h1>
+        <p class="sub">ULT-203 Stok ve Envanter Yönetimi · 2026–2027 Güz · Öğr. Gör. Muhammed Sefa Gör</p>
+      </div>
+      <button class="admin-btn" id="adminOpen" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        Yönetici
+      </button>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="stBooks">–</b><span>boşta kitap</span>
+        <div class="bar"><i id="stBar"></i></div></div>
+      <div class="stat"><b id="stDone">–</b><span>seçim yapan öğrenci</span></div>
+      <div class="stat"><b id="stWait">–</b><span>seçim bekleyen öğrenci</span></div>
+    </div>
+  </div>
+</header>
+<div class="banner hide" id="demoBanner"><div class="wrap">Demo modu: seçimler yalnızca bu tarayıcıda saklanıyor. Sınıfla paylaşmadan önce README'deki Google Apps Script kurulumunu yapın.</div></div>
+
+<main class="wrap">
+  <section class="steps">
+    <div class="panel">
+      <div class="step-h"><div class="num">1</div><div><h2>Adınızı seçin</h2><p>Listede adınızı yazmaya başlayın. Daha önce kitap seçmiş öğrenciler pasiftir.</p></div></div>
+      <div class="combo" id="stuCombo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        <input class="field" id="stuInput" placeholder="Ad Soyad" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="stuList">
+        <div class="dropdown" id="stuList" role="listbox"></div>
+      </div>
+      <div class="chosen" id="stuChosen">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f6b4f" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
+        <b id="stuChosenName"></b><button class="link" id="stuChange" type="button">Değiştir</button>
+      </div>
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab on" data-tab="books" role="tab">Kitaplar <span class="c" id="cBooks"></span></button>
+    <button class="tab" data-tab="picks" role="tab">Seçimler <span class="c" id="cPicks"></span></button>
+    <button class="tab" data-tab="students" role="tab">Öğrenciler <span class="c" id="cStudents"></span></button>
+  </nav>
+
+  <section id="tab-books">
+    <div class="step-h" style="margin-bottom:12px"><div class="num">2</div><div><h2>Kitabınızı seçin</h2><p>Her kitap yalnızca bir öğrenciye verilir. Seçim yapıldığında kitap pasif hale gelir.</p></div></div>
+    <div class="toolbar">
+      <div class="combo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input class="field" id="q" placeholder="Kitap veya yazar ara">
+      </div>
+      <div class="seg" id="filter">
+        <button class="on" data-f="all" type="button">Tümü</button>
+        <button data-f="free" type="button">Boşta</button>
+        <button data-f="taken" type="button">Seçilmiş</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="tab-picks" class="hide">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>#</th><th>Öğrenci</th><th>Kitap</th><th>Yazar</th><th>Seçim zamanı</th></tr></thead>
+      <tbody id="picksBody"></tbody>
+    </table></div>
+  </section>
+
+  <section id="tab-students" class="hide">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>#</th><th>Öğrenci</th><th>Durum</th><th>Kitap</th><th>Saat</th></tr></thead>
+      <tbody id="stuBody"></tbody>
+    </table></div>
+  </section>
+</main>
+
+<footer><div class="wrap">Bir hata yaptıysanız ders sorumlusuna başvurun; seçiminiz yalnızca yönetici tarafından serbest bırakılabilir.</div></footer>
+
+<!-- Confirm modal -->
+<div class="scrim" id="confirmM" aria-modal="true" role="dialog">
+  <div class="modal">
+    <div class="mh"><h3>Seçimi onaylayın</h3><p>Onayladıktan sonra seçimi yalnızca yönetici değiştirebilir.</p></div>
+    <div class="mb">
+      <div class="summary">
+        <div><span>Öğrenci</span><b id="cfStu"></b></div>
+        <div><span>Kitap</span><b id="cfBook"></b></div>
+        <div><span>Yazar</span><b id="cfAuthor"></b></div>
+      </div>
+      <div id="noWrap">
+        <label class="lb" for="cfNo">Öğrenci numaranız</label>
+        <input class="inp" id="cfNo" inputmode="numeric" autocomplete="off" placeholder="Örn. 253107000">
+        <div class="hint">Seçimin size ait olduğunu doğrulamak için gereklidir.</div>
+      </div>
+      <div class="err" id="cfErr"></div>
+    </div>
+    <div class="mf"><button class="btn ghost" data-close type="button">Vazgeç</button><button class="btn pri" id="cfOk" type="button">Kitabı seç</button></div>
+  </div>
+</div>
+
+<!-- Password modal -->
+<div class="scrim" id="pwM" aria-modal="true" role="dialog">
+  <div class="modal">
+    <div class="mh"><h3>Yönetici girişi</h3><p>Sayfa bilgileri ve seçim yönetimi için şifre gerekir.</p></div>
+    <div class="mb">
+      <label class="lb" for="pw">Şifre</label>
+      <input class="inp" id="pw" type="password" autocomplete="current-password">
+      <div class="err" id="pwErr"></div>
+    </div>
+    <div class="mf"><button class="btn ghost" data-close type="button">Vazgeç</button><button class="btn pri" id="pwOk" type="button">Giriş</button></div>
+  </div>
+</div>
+
+<!-- Admin panel -->
+<div class="scrim" id="adminM" aria-modal="true" role="dialog">
+  <div class="modal wide">
+    <div class="admin-head">
+      <div><div class="eyebrow" style="color:var(--brass)">Yönetici paneli</div>
+        <h3 style="font-family:Fraunces,serif;font-size:24px;margin:4px 0 0;font-weight:600">Seçimler ve sayfa sayıları</h3></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn line sm" id="csvBtn" type="button">CSV indir</button>
+        <button class="btn ghost sm" id="logout" type="button">Çıkış</button>
+      </div>
+    </div>
+    <div class="admin-body">
+      <div class="kpis" id="kpis"></div>
+      <div class="seg" id="aTabs" style="margin-bottom:12px">
+        <button class="on" data-a="sel" type="button">Seçimler</button>
+        <button data-a="all" type="button">Tüm kitaplar</button>
+        <button data-a="wait" type="button">Seçim yapmayanlar</button>
+      </div>
+      <div class="tbl-wrap" style="margin:0"><table id="aTable"></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- Release confirm modal -->
+<div class="scrim" id="relM" aria-modal="true" role="dialog">
+  <div class="modal">
+    <div class="mh"><h3>Seçimi serbest bırak</h3><p>Öğrenci ve kitap yeniden seçilebilir hale gelecek.</p></div>
+    <div class="mb">
+      <div class="summary">
+        <div><span>Öğrenci</span><b id="rlStu"></b></div>
+        <div><span>Kitap</span><b id="rlBook"></b></div>
+        <div><span>Seçim zamanı</span><b id="rlTime"></b></div>
+      </div>
+      <div class="err" id="rlErr"></div>
+    </div>
+    <div class="mf"><button class="btn ghost" data-close type="button">Vazgeç</button><button class="btn pri" id="rlOk" type="button">Serbest bırak</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ AYARLAR ============ */
+const CONFIG = {
+  // Google Apps Script Web App adresi (README'ye bakın). Boş bırakılırsa demo modu çalışır.
+  API_URL: "https://script.google.com/macros/s/AKfycbwTNdQ1_I1sD7D0-q3lTFUR60PO9nril1fQm8EndYIcxRxu628OiLJLniv-L4mQB-Ejbw/exec",
+  REFRESH_MS: 15000
+};
+
+/* ============ VERİ (otomatik üretildi) ============ */
+const BOOKS = [{"id": "b01", "title": "Muhabbet", "author": "Virginia Evans"}, {"id": "b02", "title": "Algernon'a Çiçekler", "author": "Daniel Keyes"}, {"id": "b03", "title": "Taş Kağıt Makas", "author": "Alice Feeney"}, {"id": "b04", "title": "Dicle'nin Sandalı", "author": "Nazan Bekiroğlu"}, {"id": "b05", "title": "17 Haziran", "author": "Alex Schulman"}, {"id": "b06", "title": "Gece Yarısı Kütüphanesi", "author": "Matt Haig"}, {"id": "b07", "title": "Kocamın Karısı", "author": "Alice Feeney"}, {"id": "b08", "title": "Gece Yarısı Treni", "author": "Matt Haig"}, {"id": "b09", "title": "El Kızı", "author": "Orhan Kemal"}, {"id": "b10", "title": "Hamnet", "author": "Maggie O'Farrell"}, {"id": "b11", "title": "Saatleri Ayarlama Enstitüsü", "author": "Ahmet Hamdi Tanpınar"}, {"id": "b12", "title": "Sonrasında", "author": "Stephen King"}, {"id": "b13", "title": "Momo", "author": "Michael Ende"}, {"id": "b14", "title": "Hizmetçi", "author": "Freida McFadden"}, {"id": "b15", "title": "Gece Açan Çiçekler", "author": "Tarık Tufan"}, {"id": "b16", "title": "Annemin Uyurgezer Geceleri", "author": "Ayfer Tunç"}, {"id": "b17", "title": "Atomik Alışkanlıklar", "author": "James Clear"}, {"id": "b18", "title": "Sessiz Hasta", "author": "Alex Michaelides"}, {"id": "b19", "title": "Paladyum", "author": "Leigh Turner"}, {"id": "b20", "title": "Ne Yaptığını Biliyorum", "author": "Alice Feeney"}, {"id": "b21", "title": "İşin Aslı, Judit ve Sonrası", "author": "Sandor Marai"}, {"id": "b22", "title": "Huzur", "author": "Ahmet Hamdi Tanpınar"}, {"id": "b23", "title": "Körlük", "author": "Jose Saramago"}, {"id": "b24", "title": "Bereketli Topraklar Üzerinde", "author": "Orhan Kemal"}, {"id": "b25", "title": "Semerkant", "author": "Amin Maalouf"}, {"id": "b26", "title": "Çalıkuşu", "author": "Reşat Nuri Güntekin"}, {"id": "b27", "title": "Azdahak", "author": "İskender Pala"}, {"id": "b28", "title": "Güzel Çirkin", "author": "Alice Feeney"}, {"id": "b29", "title": "Bugün Kalan Hayatımın İlk Günü", "author": "Maud Ankaoua"}, {"id": "b30", "title": "İnce Memed 1", "author": "Yaşar Kemal"}, {"id": "b31", "title": "Bülbülü Öldürmek", "author": "Harper Lee"}, {"id": "b32", "title": "1984 (Kapra Yayıncılık)", "author": "George Orwell"}, {"id": "b33", "title": "Duanız Olmasa", "author": "Fatma Bayram"}, {"id": "b34", "title": "Ove Diye Biri", "author": "Fredrik Backman"}, {"id": "b35", "title": "Allah'a Hüsnüzan Beslemek", "author": "İyad Kunaybi"}, {"id": "b36", "title": "Nefsin Haritası", "author": "Rumeysa Küçük Koyuncu"}, {"id": "b37", "title": "Hizmetçinin Sırrı", "author": "Freida McFadden"}, {"id": "b38", "title": "Tuhaf Binalar", "author": "Uketsu"}, {"id": "b39", "title": "Ben, Kirke", "author": "Madeline Miller"}, {"id": "b40", "title": "Dervişin Teselli Koleksiyonu", "author": "Mecit Ömür Öztürk"}, {"id": "b41", "title": "Hizmetçi İzliyor", "author": "Freida McFadden"}, {"id": "b42", "title": "Harry Potter ve Felsefe Taşı", "author": "J. K. Rowling"}, {"id": "b43", "title": "Od", "author": "İskender Pala"}, {"id": "b44", "title": "Çalınan Dikkat", "author": "Johann Hari"}, {"id": "b45", "title": "Gurur ve Önyargı", "author": "Jane Austen"}, {"id": "b46", "title": "Baş Belaları ve Başyapıtları", "author": "Yiğit Aydın"}, {"id": "b47", "title": "Sığınağım ve Fırtınam", "author": "Arundhati Roy"}, {"id": "b48", "title": "1984 (Can Yayınları)", "author": "George Orwell"}, {"id": "b49", "title": "Pir-i Lezzet!", "author": "Saygın Ersin"}, {"id": "b50", "title": "Dokunmadan", "author": "Nermin Yıldırım"}, {"id": "b51", "title": "Bin Muhteşem Güneş", "author": "Khaled Hosseini"}, {"id": "b52", "title": "Hyunam-Dong Kitabevi", "author": "Hwang Bo-Reum"}, {"id": "b53", "title": "Mai ve Siyah", "author": "Halid Ziya Uşaklıgil"}, {"id": "b54", "title": "Böyle Buyurdu Zerdüşt", "author": "Friedrich Nietzsche"}, {"id": "b55", "title": "Bir Ömür Nasıl Yaşanır?", "author": "İlber Ortaylı"}, {"id": "b56", "title": "Sakın Yalan Söyleme", "author": "Freida McFadden"}, {"id": "b57", "title": "Malamander", "author": "Thomas Taylor"}, {"id": "b58", "title": "Uçurtma Avcısı", "author": "Khaled Hosseini"}, {"id": "b59", "title": "Göbeklitepe'de Gece Yarısı", "author": "Kayahan Demir"}, {"id": "b60", "title": "Bırak Yapsınlar Teorisi", "author": "Mel Robbins"}, {"id": "b61", "title": "Malma İstasyonu", "author": "Alex Schulman"}, {"id": "b62", "title": "İçimdeki Müzik", "author": "Sharon M. Draper"}, {"id": "b63", "title": "Rüzgarı Dizginleyen Çocuk", "author": "William Kamkwamba, Bryan Mealer"}, {"id": "b64", "title": "Ene & Sus Ey Nefsim!", "author": "Fatih Duman"}, {"id": "b65", "title": "Düşmezsen Büyüyemezsin", "author": "Emre Gürlek"}, {"id": "b66", "title": "Doğu Ekspresinde Cinayet", "author": "Agatha Christie"}, {"id": "b67", "title": "Çöl Çiçeği", "author": "Waris Dirie"}, {"id": "b68", "title": "Matilda", "author": "Roald Dahl"}, {"id": "b69", "title": "Kanını Satan Adam", "author": "Yu Hua"}, {"id": "b70", "title": "Evelyn Hardcastle'ın Yedi Ölümü", "author": "Stuart Turton"}, {"id": "b71", "title": "Martin Eden", "author": "Jack London"}, {"id": "b72", "title": "İnce Memed 2", "author": "Yaşar Kemal"}, {"id": "b73", "title": "Erişkin Acil Servis Order-Reçete El Kitabı", "author": "Muhammed Emrullah Yıldırım"}];
+const STUDENTS = [{"id": "s01","name": "CHINGIZ MUSAYEV"},{"id": "s02","name": "ESİN SAK"},{"id": "s03","name": "ALEYNA DOĞRUL"},{"id": "s04","name": "EMİNE GÜLSU"},{"id": "s05","name": "REVAN HÜSEYNOV"},{"id": "s06","name": "MURAD MUSAYEV"},{"id": "s07","name": "KHALIL YUSUBOV"},{"id": "s08","name": "RÜYA DEĞEŞ"},{"id": "s09","name": "SEYHAN GAZİ ÜNLÜER"},{"id": "s10","name": "CİHAT DOĞAN"},{"id": "s11","name": "MELİSA İNCİ"},{"id": "s12","name": "EREN EMRE BERBER"},{"id": "s13","name": "NEHİR BAŞOL"},{"id": "s14","name": "ŞEYMANUR KILIÇ"},{"id": "s15","name": "SAFA AMIRMATOV"},{"id": "s16","name": "ZEYNAL TAGHIYEV"},{"id": "s17","name": "ELMIN JAFARZADE"},{"id": "s18","name": "ELVIN GANIYEV"},{"id": "s19","name": "IBRAHIM NAMAZOV"},{"id": "s20","name": "MATIN RZALI"},{"id": "s21","name": "BUĞRA MUTLU"},{"id": "s22","name": "AHMET ÇOBAN"},{"id": "s23","name": "SÜMEYYE CEBECİ"},{"id": "s24","name": "ERAY KUŞ"},{"id": "s25","name": "ÇAĞATAY YİĞİT"},{"id": "s26","name": "YİĞİT SEZER"},{"id": "s27","name": "EYLÜL KAYMAZ"},{"id": "s28","name": "MERTCAN DEMİR"},{"id": "s29","name": "ALEYNA KARLANKUŞ"},{"id": "s30","name": "KÜBRA ATALARDİN"},{"id": "s31","name": "ÖYKÜ KAP"},{"id": "s32","name": "NEHİR KENDİR"},{"id": "s33","name": "YAĞIZ ÇELİKARSLAN"},{"id": "s34","name": "SAİT ULAŞ KOCAOĞLU"},{"id": "s35","name": "YAĞMUR DUMAN"},{"id": "s36","name": "NİSA NUR TEKE"},{"id": "s37","name": "AYŞE NEHİR AKKAYA"},{"id": "s38","name": "İLAYDA DOĞAN"},{"id": "s39","name": "ELANUR KOÇ"},{"id": "s40","name": "KÜBRA NUR KAÇMAZ"},{"id": "s41","name": "UMUT EFE SOUKSU"},{"id": "s42","name": "EMİRHAN KARTAL"},{"id": "s43","name": "ZEHRANUR ATASOY"},{"id": "s44","name": "CİHANER DİNDAR"},{"id": "s45","name": "FATMA ASEL CEBECİ"},{"id": "s46","name": "FATMA USLU"},{"id": "s47","name": "SEMİH SEVİM"},{"id": "s48","name": "EMİNE CAN"},{"id": "s49","name": "YAHYA AY"},{"id": "s50","name": "BURAK SAFA CEYHAN"},{"id": "s51","name": "BURAK FIRINDÜZÜ"},{"id": "s52","name": "KAYRA OKTAY"},{"id": "s53","name": "FİKRET EMRE ERDEM"},{"id": "s54","name": "ÖMER FARUK MAMUK"},{"id": "s55","name": "ZEYNEP ONAY"},{"id": "s56","name": "EBRAR RABİA GÖGER"},{"id": "s57","name": "SENA AKYÜZ"},{"id": "s58","name": "DİLARA UYANIK"},{"id": "s59","name": "YAĞMUR GONÇ"},{"id": "s60","name": "EBRAR ATALAY"},{"id": "s61","name": "İREM NUR KUŞ"},{"id": "s62","name": "MEDİNE HAZAL BAYRAKCİ"},{"id": "s63","name": "SEVİLAY ÇINAR"},{"id": "s64","name": "RUHAN GÜLSE KARAKÖSE"},{"id": "s65","name": "ÖMER SUSAM"},{"id": "s66","name": "MERVE GÜNDOĞDU"},{"id": "s67","name": "MERVE SULTAN SÖYÜT"},{"id": "s68","name": "NECLA TEMÜR"},{"id": "s69","name": "BARAN BUĞRA ŞEN"},{"id": "s70","name": "AIDA AKZHANKYZY"},{"id": "s71","name": "NURLAN ORUJOV"},{"id": "s72","name": "RAVAN FATALIYEV"},{"id": "s73","name": "NIJAT MAMMADOV"},{"id": "s74","name": "ALI MUSLUMOV"},{"id": "s75","name": "NIHAT GULIYEV"},{"id": "s76","name": "SUDENUR AKSAKAL"},{"id": "s77","name": "MİNA BİLGE"},{"id": "s78","name": "KANI OZEL"},{"id": "s79","name": "YASEMİN DANIŞ"},{"id": "s80","name": "MEDİHA NUR DEMİRBAŞ"}];
+// Sayfa sayıları yönetici şifresiyle şifrelenmiştir (AES-GCM). Şifre olmadan okunamaz.
+const VAULT = {"s": "Reychdt/A94yv9vNdJRyew==", "i": "o99F5YFdnA+A5zJL", "n": 250000, "c": "3tKxDQf7TpfJCjpaOOan1+22mAVA6X80MndI0vzUDAAdIyW3IIg1Xsyw0EjIu8Nj+9A6sQ0YlFo0BElIeqDyXsVnsWmUdw72Q66aSuCTtUawHsYkNq0eCMjy9jz0zkdcUnw3m8aZN/oJOjQF0JsCNNbBcydsXY1Zlzk8UrVEYowaw4uhylDO+nXdQpdrBOn+7zrg371vmvWCCSHzgZshsiRnZX+XJ6GcoXxk8o3k8npFbru+tjxB4aJ3YHmQ7s5DShCQErgzLoVP79Eft3fYyUTpAfSfUG+N8yUXLy2hiKHVF72hzyCezr1m0th3sSqB/x4gX9Jg5GW2QfH7QyjR4I54RlIwvM0j4pbCn35TUwJ1lHVw8WGLcbjA3H+i2TnZXs8hOxKMRb68nnD2Kcug09i7NBhdP6dTmJQV9/R5nH4pXytvGhLo1j0HSrIekae1V76kSkUrQ+jJkluR57oX3OLu4mM+iw6OJCVmg4lWuMFKoJtmMfNM9XYktynfPFQN+Bzcv/+TEvqVxwtE9840ZXHwNn2ze5/TAtHXch00BX0AxrOp78ZGtmpNuPbjBV6ZYR14irbs8ql3hbhFQ/PsKqCubKC4fQd5qQTNCji/aZN8r4T4D/41MAGsUe5zbKRuqZ+5SvTwBtRvAuOdCmQtjt5q1sIyfqihHixaTjD+zlKF6gZe7RmveSw05lpsGzzIIJwU1R/s3nZN03JE6ZDCshpndzfJEOvY/gKzrq1599nZr374mpjayDSwdOOKctqehVaaX1/e1D/JprNSzgULw37SVjXDJFd4wlwW95srfHNFUsXPzUmQIbyAAdQQAzFB7GW+Dbf+VCCdpeeszat17d1Kke21rMGKLPKmXOOQm8dqODNUpqrasZ4TJ7DQ3kiKmv37jmQqMmouSwKEvUn2AXuE+Mxwbqqem9gBN2jawSmPlnc+/5hkQMccdO+KOF3uhw/1lIfaLzra5Q4DvqyxmzaDN2CGAgRCC0Ks9H7f+JSJ/IPvAy7N2x1x82KuZ20zdRgIF+O3KrWWIG7yAbpnQ21k6LYYievEEzLrCsqRZ88tpOEKMDHRQKBxN6ktnmC4H2Y594YxzR8l9dGBXc7D6lr3zO6wRET2yoFcN+PTfg4axS0tRcNJc04USOPFcLfw4PpOhIl8CaFtLccf3HgHsXVrQBYqmS2YLXtZ4Q=="};
+
+/* ============ DURUM ============ */
+const DEMO = !CONFIG.API_URL;
+let picks = [];          // {bookId, studentId, studentName, bookTitle, time, ts}
+let me = null;           // seçili öğrenci
+let filter = "all", query = "";
+let admin = null;        // {pw, pages}
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => s.toLocaleLowerCase("tr").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/ı/g,"i");
+const bookById = id => BOOKS.find(b => b.id === id);
+const pickByBook = id => picks.find(p => p.bookId === id);
+const pickByStu = id => picks.find(p => p.studentId === id);
+const hueOf = id => (parseInt(id.slice(1)) * 47) % 360;
+
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),3200)}
+function nowLabel(d=new Date()){
+  return d.toLocaleString("tr-TR",{timeZone:"Europe/Istanbul",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+}
+function hm(p){return (p.time||"").split(" ").pop()}
+
+/* ============ VERİ KATMANI ============ */
+const store = {
+  async list(){
+    if (DEMO){ try{return JSON.parse(localStorage.getItem("kitapSecim")||"[]")}catch{return []} }
+    const r = await fetch(CONFIG.API_URL + "?action=list&_=" + Date.now());
+    const j = await r.json(); if(!j.ok) throw new Error(j.error); return j.picks;
+  },
+  async post(body){
+    if (DEMO) return demoPost(body);
+    const r = await fetch(CONFIG.API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
+    return r.json();
+  }
+};
+function demoSave(){try{localStorage.setItem("kitapSecim",JSON.stringify(picks))}catch{}}
+function demoPost(b){
+  if (b.action === "select"){
+    if (pickByBook(b.bookId)) return {ok:false,error:"Bu kitap az önce başka bir öğrenci tarafından seçildi."};
+    if (pickByStu(b.studentId)) return {ok:false,error:"Bu öğrenci zaten bir kitap seçmiş."};
+    const s = STUDENTS.find(x=>x.id===b.studentId), k = bookById(b.bookId), d = new Date();
+    picks.push({bookId:k.id,bookTitle:k.title,studentId:s.id,studentName:s.name,time:nowLabel(d),ts:d.getTime()});
+    demoSave(); return {ok:true,picks};
+  }
+  if (b.action === "release"){
+    if (!admin || b.password !== admin.pw) return {ok:false,error:"Yetkisiz işlem."};
+    picks = picks.filter(p=>p.bookId!==b.bookId); demoSave(); return {ok:true,picks};
+  }
+  return {ok:false,error:"Bilinmeyen işlem"};
+}
+
+async function refresh(){
+  try{ picks = await store.list(); render(); }
+  catch(e){ console.error(e); toast("Seçimler yüklenemedi. Bağlantınızı kontrol edin."); }
+}
+
+/* ============ ÇİZİM ============ */
+function render(){
+  const free = BOOKS.length - picks.length;
+  $("#stBooks").textContent = `${free} / ${BOOKS.length}`;
+  $("#stBar").style.width = (picks.length / BOOKS.length * 100) + "%";
+  $("#stDone").textContent = picks.length;
+  $("#stWait").textContent = STUDENTS.length - picks.length;
+  $("#cBooks").textContent = free; $("#cPicks").textContent = picks.length; $("#cStudents").textContent = STUDENTS.length;
+  if (me && pickByStu(me.id)) { setMe(null); }
+  renderGrid(); renderPicks(); renderStudents(); renderStuList();
+  if (admin) renderAdmin();
+}
+
+function renderGrid(){
+  const q = norm(query);
+  const list = BOOKS.filter(b=>{
+    const t = !!pickByBook(b.id);
+    if (filter==="free" && t) return false;
+    if (filter==="taken" && !t) return false;
+    return !q || norm(b.title+" "+b.author).includes(q);
+  });
+  $("#grid").innerHTML = list.length ? list.map(b=>{
+    const p = pickByBook(b.id);
+    const spine = `hsl(${hueOf(b.id)} 38% 38%)`;
+    return `<button class="book ${p?"taken":""}" style="--spine:${spine}" data-id="${b.id}" ${p?'aria-disabled="true" tabindex="-1"':''} type="button">
+      <span class="no">No. ${b.id.slice(1)}</span>
+      <h3>${esc(b.title)}</h3>
+      <span class="au">${esc(b.author)}</span>
+      ${p ? `<div class="stamp"><span>Seçen: <b>${esc(p.studentName)}</b></span><span>${esc(hm(p))}</span></div>`
+          : `<div class="foot"><span class="pill free">Boşta</span><span class="go">Seç →</span></div>`}
+    </button>`;
+  }).join("") : `<div class="empty">Aramanızla eşleşen kitap bulunamadı.</div>`;
+}
+
+function renderPicks(){
+  const rows = [...picks].sort((a,b)=>a.ts-b.ts);
+  $("#picksBody").innerHTML = rows.length ? rows.map((p,i)=>{
+    const b = bookById(p.bookId)||{};
+    return `<tr><td class="muted">${i+1}</td><td><b>${esc(p.studentName)}</b></td><td>${esc(b.title||p.bookTitle)}</td><td class="muted">${esc(b.author||"")}</td><td class="t">${esc(p.time)}</td></tr>`;
+  }).join("") : `<tr><td colspan="5" class="muted" style="text-align:center;padding:30px">Henüz seçim yapılmadı.</td></tr>`;
+}
+
+function renderStudents(){
+  $("#stuBody").innerHTML = STUDENTS.map((s,i)=>{
+    const p = pickByStu(s.id), b = p && bookById(p.bookId);
+    return `<tr><td class="muted">${i+1}</td><td><b>${esc(s.name)}</b></td>
+      <td>${p?'<span class="tag y">Seçti</span>':'<span class="tag n">Bekliyor</span>'}</td>
+      <td>${b?esc(b.title):'<span class="muted">—</span>'}</td><td class="t">${p?esc(hm(p)):'—'}</td></tr>`;
+  }).join("");
+}
+
+/* ============ ÖĞRENCİ SEÇİMİ ============ */
+let hl = -1;
+function renderStuList(){
+  const q = norm($("#stuInput").value);
+  const list = STUDENTS.filter(s=>!q || norm(s.name).includes(q));
+  $("#stuList").innerHTML = list.length ? list.map((s,i)=>{
+    const p = pickByStu(s.id);
+    return `<div class="opt ${p?"dis":""} ${i===hl?"hl":""}" data-id="${s.id}" role="option">${esc(s.name)}${p?`<small>seçti · ${esc(hm(p))}</small>`:""}</div>`;
+  }).join("") : `<div class="opt dis">Eşleşen öğrenci yok</div>`;
+}
+function openList(o){$("#stuList").classList.toggle("open",o);$("#stuInput").setAttribute("aria-expanded",o)}
+function setMe(s){
+  me = s;
+  $("#stuCombo").classList.toggle("hide",!!s);
+  $("#stuChosen").classList.toggle("show",!!s);
+  if (s) $("#stuChosenName").textContent = s.name; else $("#stuInput").value="";
+}
+$("#stuInput").addEventListener("focus",()=>{hl=-1;renderStuList();openList(true)});
+$("#stuInput").addEventListener("input",()=>{hl=-1;renderStuList();openList(true)});
+$("#stuInput").addEventListener("keydown",e=>{
+  const opts=[...$("#stuList").querySelectorAll(".opt:not(.dis)")];
+  if(e.key==="ArrowDown"){hl=Math.min(hl+1,opts.length-1);e.preventDefault()}
+  else if(e.key==="ArrowUp"){hl=Math.max(hl-1,0);e.preventDefault()}
+  else if(e.key==="Enter" && opts[Math.max(hl,0)]){chooseStu(opts[Math.max(hl,0)].dataset.id);return}
+  else if(e.key==="Escape"){openList(false);return} else return;
+  $("#stuList").querySelectorAll(".opt").forEach(o=>o.classList.remove("hl"));
+  opts[hl]?.classList.add("hl"); opts[hl]?.scrollIntoView({block:"nearest"});
+});
+$("#stuList").addEventListener("mousedown",e=>{const o=e.target.closest(".opt:not(.dis)");if(o&&o.dataset.id){e.preventDefault();chooseStu(o.dataset.id)}});
+document.addEventListener("click",e=>{if(!e.target.closest("#stuCombo"))openList(false)});
+function chooseStu(id){setMe(STUDENTS.find(s=>s.id===id));openList(false);toast("Şimdi listeden kitabınızı seçin.")}
+$("#stuChange").onclick=()=>{setMe(null);$("#stuInput").focus()};
+
+/* ============ KİTAP SEÇİMİ ============ */
+let pending = null;
+$("#grid").addEventListener("click",e=>{
+  const c = e.target.closest(".book"); if(!c || c.classList.contains("taken")) return;
+  if (!me){ toast("Önce 1. adımda adınızı seçin."); window.scrollTo({top:0,behavior:"smooth"}); $("#stuInput").focus(); return; }
+  pending = bookById(c.dataset.id);
+  $("#cfStu").textContent = me.name; $("#cfBook").textContent = pending.title; $("#cfAuthor").textContent = pending.author;
+  $("#noWrap").classList.toggle("hide",DEMO);
+  $("#cfNo").value=""; $("#cfErr").textContent="";
+  openM("#confirmM"); if(!DEMO) setTimeout(()=>$("#cfNo").focus(),50);
+});
+$("#cfNo").addEventListener("keydown",e=>{if(e.key==="Enter")$("#cfOk").click()});
+$("#cfOk").onclick = async ()=>{
+  const no = $("#cfNo").value.trim();
+  if (!DEMO && !/^\d{6,12}$/.test(no)){ $("#cfErr").textContent="Geçerli bir öğrenci numarası girin."; return; }
+  const btn=$("#cfOk"); btn.disabled=true; btn.textContent="Kaydediliyor…";
+  try{
+    const r = await store.post({action:"select",bookId:pending.id,studentId:me.id,studentNo:no});
+    if(!r.ok){ $("#cfErr").textContent=r.error||"İşlem başarısız."; if(r.picks){picks=r.picks;render()} return; }
+    picks = r.picks; const name = me.name, title = pending.title;
+    closeM("#confirmM"); setMe(null); render();
+    toast(`${name}: “${title}” seçildi.`);
+  }catch(e){ $("#cfErr").textContent="Sunucuya ulaşılamadı. Tekrar deneyin."; }
+  finally{ btn.disabled=false; btn.textContent="Kitabı seç"; }
+};
+
+/* ============ SEKME / FİLTRE ============ */
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===t));
+  ["books","picks","students"].forEach(k=>$("#tab-"+k).classList.toggle("hide",k!==t.dataset.tab));
+});
+$("#filter").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;filter=b.dataset.f;
+  $("#filter").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));renderGrid()});
+$("#q").addEventListener("input",e=>{query=e.target.value;renderGrid()});
+
+/* ============ MODAL ============ */
+function openM(s){$(s).classList.add("open")}
+function closeM(s){$(s).classList.remove("open")}
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeM("#"+b.closest(".scrim").id));
+document.querySelectorAll(".scrim").forEach(s=>s.addEventListener("mousedown",e=>{if(e.target===s)closeM("#"+s.id)}));
+document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;const o=[...document.querySelectorAll(".scrim.open")].pop();if(o)closeM("#"+o.id)});
+
+/* ============ YÖNETİCİ ============ */
+const b64 = s => Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function unlock(pw){
+  const key = await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+  const k = await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(VAULT.s),iterations:VAULT.n,hash:"SHA-256"},key,{name:"AES-GCM",length:256},false,["decrypt"]);
+  const pt = await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(VAULT.i)},k,b64(VAULT.c));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+$("#adminOpen").onclick=()=>{ if(admin){openM("#adminM");renderAdmin();return} $("#pw").value="";$("#pwErr").textContent="";openM("#pwM");setTimeout(()=>$("#pw").focus(),50)};
+$("#pw").addEventListener("keydown",e=>{if(e.key==="Enter")$("#pwOk").click()});
+$("#pwOk").onclick=async()=>{
+  const pw=$("#pw").value; if(!pw) return;
+  try{ const pages = await unlock(pw); admin={pw,pages}; closeM("#pwM"); openM("#adminM"); renderAdmin(); }
+  catch{ $("#pwErr").textContent="Şifre hatalı."; }
+};
+$("#logout").onclick=()=>{admin=null;closeM("#adminM");toast("Yönetici oturumu kapatıldı.")};
+let aView="sel";
+$("#aTabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;aView=b.dataset.a;
+  $("#aTabs").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));renderAdmin()});
+
+function renderAdmin(){
+  const P = admin.pages, sel = [...picks].sort((a,b)=>a.ts-b.ts);
+  const pg = sel.map(p=>P[p.bookId]||0), tot = pg.reduce((a,b)=>a+b,0);
+  $("#kpis").innerHTML = `
+    <div class="kpi"><b>${sel.length}</b><span>seçim yapıldı</span></div>
+    <div class="kpi"><b>${STUDENTS.length-sel.length}</b><span>öğrenci bekliyor</span></div>
+    <div class="kpi"><b>${sel.length?Math.round(tot/sel.length):"–"}</b><span>ortalama sayfa</span></div>
+    <div class="kpi"><b>${sel.length?Math.min(...pg)+"–"+Math.max(...pg):"–"}</b><span>sayfa aralığı</span></div>`;
+  const T=$("#aTable");
+  if(aView==="sel"){
+    T.innerHTML = `<thead><tr><th>#</th><th>Öğrenci</th><th>Kitap</th><th>Yazar</th><th>Sayfa</th><th>Seçim zamanı</th><th></th></tr></thead><tbody>${
+      sel.length? sel.map((p,i)=>{const b=bookById(p.bookId)||{};return `<tr><td class="muted">${i+1}</td><td><b>${esc(p.studentName)}</b></td>
+        <td>${esc(b.title||p.bookTitle)}</td><td class="muted">${esc(b.author||"")}</td><td class="t"><b>${P[p.bookId]??"?"}</b></td>
+        <td class="t">${esc(p.time)}</td><td><button class="btn line sm" data-rel="${p.bookId}" type="button">Serbest bırak</button></td></tr>`}).join("")
+      : `<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">Henüz seçim yok.</td></tr>`}</tbody>`;
+  } else if(aView==="all"){
+    T.innerHTML = `<thead><tr><th>No</th><th>Kitap</th><th>Yazar</th><th>Sayfa</th><th>Durum</th></tr></thead><tbody>${
+      BOOKS.map(b=>{const p=pickByBook(b.id);return `<tr><td class="muted">${b.id.slice(1)}</td><td><b>${esc(b.title)}</b></td><td class="muted">${esc(b.author)}</td>
+      <td class="t"><b>${P[b.id]}</b></td><td>${p?`<span class="tag y">${esc(p.studentName)}</span>`:'<span class="tag n">Boşta</span>'}</td></tr>`}).join("")}</tbody>`;
+  } else {
+    const w = STUDENTS.filter(s=>!pickByStu(s.id));
+    T.innerHTML = `<thead><tr><th>#</th><th>Öğrenci</th></tr></thead><tbody>${
+      w.length? w.map((s,i)=>`<tr><td class="muted">${i+1}</td><td>${esc(s.name)}</td></tr>`).join("") : `<tr><td colspan="2" class="muted" style="text-align:center;padding:30px">Tüm öğrenciler seçim yaptı.</td></tr>`}</tbody>`;
+  }
+}
+let relId=null;
+$("#aTable").addEventListener("click",e=>{
+  const b=e.target.closest("[data-rel]"); if(!b) return;
+  const p=pickByBook(b.dataset.rel), k=bookById(b.dataset.rel); if(!p||!k) return;
+  relId=k.id; $("#rlStu").textContent=p.studentName; $("#rlBook").textContent=k.title; $("#rlTime").textContent=p.time;
+  $("#rlErr").textContent=""; openM("#relM");
+});
+$("#rlOk").onclick=async()=>{
+  if(!relId||!admin) return;
+  const btn=$("#rlOk"); btn.disabled=true; btn.textContent="Serbest bırakılıyor…";
+  try{
+    const r=await store.post({action:"release",bookId:relId,password:admin.pw});
+    if(!r.ok){$("#rlErr").textContent=r.error||"İşlem başarısız.";return}
+    picks=r.picks||[]; closeM("#relM"); relId=null; render(); toast("Seçim serbest bırakıldı. Öğrenci ve kitap yeniden seçilebilir.");
+  }catch(err){console.error(err);$("#rlErr").textContent="Sunucuya ulaşılamadı. Tekrar deneyin."}
+  finally{btn.disabled=false;btn.textContent="Serbest bırak"}
+};
+$("#csvBtn").onclick=()=>{
+  const rows=[["Öğrenci","Kitap","Yazar","Sayfa","Seçim Zamanı"]];
+  [...picks].sort((a,b)=>a.ts-b.ts).forEach(p=>{const b=bookById(p.bookId)||{};rows.push([p.studentName,b.title||p.bookTitle,b.author||"",admin.pages[p.bookId]??"",p.time])});
+  STUDENTS.filter(s=>!pickByStu(s.id)).forEach(s=>rows.push([s.name,"","","","Seçim yapmadı"]));
+  const csv="﻿"+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download="kitap-secimleri.csv";a.click();URL.revokeObjectURL(a.href);
+};
+
+/* ============ BAŞLAT ============ */
+if (DEMO) $("#demoBanner").classList.remove("hide");
+render(); refresh();
+if (!DEMO) setInterval(()=>{ if(!document.hidden) refresh(); }, CONFIG.REFRESH_MS);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && !DEMO) refresh(); });
+</script>
+</body>
+</html>
