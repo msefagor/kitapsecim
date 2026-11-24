@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14213d">
+<title>İstatistik Vize · Optik Okuyucu</title>
+<style>
+  :root{
+    --bg:#f3f1ec; --card:#ffffff; --ink:#14213d; --muted:#6b7280; --line:#e5e1d8;
+    --accent:#1d4ed8; --ok:#15803d; --okbg:#dcfce7; --bad:#b91c1c; --badbg:#fee2e2;
+    --warn:#a16207; --warnbg:#fef3c7; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-text-size-adjust:100%}
+  header{background:var(--ink);color:#fff;padding:18px 16px 16px;
+    padding-top:calc(18px + env(safe-area-inset-top))}
+  header h1{margin:0;font-size:1.25rem;letter-spacing:.2px}
+  header p{margin:4px 0 0;opacity:.75;font-size:.9rem}
+  main{max-width:760px;margin:0 auto;padding:14px 12px 40px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .btns{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);
+    border-radius:12px;padding:12px 16px;font-weight:600;font-size:1rem;cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;text-decoration:none;user-select:none}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;flex:1 1 200px;justify-content:center;padding:16px}
+  .btn.small{padding:8px 12px;font-size:.9rem;border-radius:10px}
+  .btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn:disabled{opacity:.45}
+  .hint{color:var(--muted);font-size:.88rem;margin:10px 0 0}
+  .hidden{display:none !important}
+  .scorebox{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .big{font-size:3.2rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .big small{font-size:1.1rem;font-weight:600;color:var(--muted)}
+  .pills{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{border-radius:999px;padding:5px 11px;font-size:.88rem;font-weight:600}
+  .pill.ok{background:var(--okbg);color:var(--ok)}
+  .pill.bad{background:var(--badbg);color:var(--bad)}
+  .pill.blank{background:#eef0f3;color:#374151}
+  .alert{border-radius:12px;padding:10px 12px;margin-top:12px;font-size:.92rem}
+  .alert.warn{background:var(--warnbg);color:#713f12;border:1px solid #fde68a}
+  .alert.good{background:var(--okbg);color:#14532d;border:1px solid #bbf7d0}
+  .alert.bad{background:var(--badbg);color:#7f1d1d;border:1px solid #fecaca}
+  .viewer{position:relative;border-radius:10px;overflow:hidden;background:#222}
+  #view{display:block;width:100%;height:auto;touch-action:pan-y}
+  #view.editing{touch-action:none;cursor:crosshair}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  th,td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:center;font-size:.95rem}
+  th{font-size:.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+  tr.row-ok td.res{color:var(--ok);font-weight:700}
+  tr.row-bad td.res{color:var(--bad);font-weight:700}
+  tr.flag{background:var(--warnbg)}
+  .opts{display:inline-flex;gap:4px}
+  .opt{width:34px;height:34px;border-radius:8px;border:1.5px solid #cbd5e1;background:#fff;
+    font-weight:700;font-size:.95rem;color:#334155;cursor:pointer;padding:0}
+  .opt.sel{background:var(--ink);border-color:var(--ink);color:#fff}
+  .opt.sel.ok{background:var(--ok);border-color:var(--ok)}
+  .opt.sel.bad{background:var(--bad);border-color:var(--bad)}
+  .opt.key{box-shadow:0 0 0 2px var(--ok) inset}
+  .opt.sel.key{box-shadow:none}
+  .tag{display:inline-block;font-size:.72rem;font-weight:700;border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:middle}
+  .tag.w{background:#fde68a;color:#713f12}
+  .tag.m{background:#e0e7ff;color:#3730a3}
+  input[type=text],input[type=number],select{font:inherit;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;width:100%;background:#fff;color:var(--ink)}
+  .row2{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .row2>*{flex:1 1 160px}
+  details summary{cursor:pointer;font-weight:700}
+  .keygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+  .keygrid label{display:flex;gap:6px;align-items:center;font-size:.9rem;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:6px 8px}
+  .keygrid label b{width:22px}
+  .keygrid select,.keygrid input{padding:6px;width:auto;flex:1;min-width:0}
+  h2{font-size:1.02rem;margin:0 0 10px}
+  .spinner{display:inline-block;width:18px;height:18px;border:3px solid #cbd5e1;border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;vertical-align:middle}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.82rem;color:var(--muted);margin-top:8px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+  .muted{color:var(--muted)}
+  .right{text-align:right}
+  .listtable td:first-child,.listtable th:first-child{text-align:left}
+</style>
+</head>
+<body>
+<header>
+  <h1>İstatistik Vize · Optik Okuyucu</h1>
+  <p id="subtitle">12 soru · Cevap tablosunu fotoğrafla, puan otomatik hesaplansın</p>
+</header>
+
+<main>
+  <section class="card">
+    <div class="btns">
+      <label class="btn primary">📷 Kâğıdı çek
+        <input id="cam" type="file" accept="image/*" capture="environment" hidden>
+      </label>
+      <label class="btn">🖼️ Galeriden seç
+        <input id="gal" type="file" accept="image/*" hidden>
+      </label>
+    </div>
+    <p class="hint">CEVAP TABLOSU'nun tamamı (sağdaki <b>Puan</b> sütunu dahil) kadrajda olsun. Kâğıt düz dursun, üzerine gölge düşmesin. Fotoğraf yalnızca bu cihazda işlenir, hiçbir yere yüklenmez.</p>
+    <div id="busy" class="hint hidden"><span class="spinner"></span> Okunuyor…</div>
+  </section>
+
+  <section id="result" class="hidden">
+    <div class="card">
+      <div class="scorebox">
+        <div class="big" id="score">0<small> / 100</small></div>
+        <div class="pills" id="pills"></div>
+      </div>
+      <div id="status"></div>
+    </div>
+
+    <div class="card">
+      <div class="viewer"><canvas id="view"></canvas></div>
+      <div class="legend">
+        <span><i style="background:#16a34a"></i>Doğru</span>
+        <span><i style="background:#dc2626"></i>Yanlış</span>
+        <span><i style="border:2px dashed #16a34a"></i>Doğru şık</span>
+        <span><i style="background:#f59e0b"></i>Kontrol et</span>
+      </div>
+      <div class="toolbar">
+        <button class="btn small" id="editBtn">✥ Hizalamayı düzelt</button>
+        <button class="btn small" id="zoomBtn">Tüm fotoğraf</button>
+        <button class="btn small hidden" id="redetectBtn">↻ Otomatik bul</button>
+      </div>
+      <p class="hint hidden" id="editHint">Dört turuncu noktayı sırasıyla <b>1-A</b>, <b>1-E</b>, <b>12-E</b> ve <b>12-A</b> kutularının tam ortasına sürükleyin. Mavi çerçeveler tüm kutuların üstüne oturunca okuma doğrudur.</p>
+    </div>
+
+    <div class="card">
+      <h2>Soru soru sonuç</h2>
+      <p class="hint" style="margin:0 0 8px">Okunan şıkkı değiştirmek için harfe dokunun; seçili harfe tekrar dokunmak o soruyu boş bırakır.</p>
+      <table>
+        <thead><tr><th>Soru</th><th>Öğrencinin cevabı</th><th>Anahtar</th><th>Puan</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Kaydet</h2>
+      <div class="row2">
+        <input type="text" id="sname" placeholder="Ad Soyad (isteğe bağlı)" autocomplete="off">
+        <input type="text" id="sno" placeholder="Öğrenci no (isteğe bağlı)" inputmode="numeric" autocomplete="off">
+      </div>
+      <div class="toolbar">
+        <button class="btn primary" id="saveBtn">✓ Kaydet ve sıradaki kâğıt</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="listCard">
+    <h2>Okunan kâğıtlar <span class="muted" id="listCount"></span></h2>
+    <div id="listWrap"><p class="hint" style="margin:0">Henüz kayıt yok.</p></div>
+    <div class="toolbar">
+      <button class="btn small" id="csvBtn">⬇︎ CSV indir (Excel)</button>
+      <button class="btn small" id="clearBtn">Listeyi temizle</button>
+    </div>
+  </section>
+
+  <details class="card" id="settings">
+    <summary>Cevap anahtarı ve puanlar</summary>
+    <p class="hint">Varsayılan: İstatistik Vize cevap anahtarı. Değişiklikler bu tarayıcıda saklanır.</p>
+    <div class="keygrid" id="keygrid"></div>
+    <div class="toolbar">
+      <span class="muted" id="keyTotal"></span>
+      <button class="btn small" id="resetKey">Varsayılana dön</button>
+    </div>
+  </details>
+</main>
+
+<!-- ===================== Görüntü işleme çekirdeği ===================== -->
+<script id="omr-core">
+const OMR = (() => {
+  // Model: birim = yan yana iki şık kutusu arasındaki mesafe (PDF'den ölçüldü)
+  const ROW = 63.27 / 124;     // satır aralığı
+  const BOX = 47 / 124;        // kutu kenarı
+  const PUAN_X = 962 / 124;    // "Puan" sütunundaki kutunun A sütununa uzaklığı
+  const NR = 12, NC = 5;
+
+  const modelXY = (r, c) => [c === 'P' ? PUAN_X : c, r * ROW];
+
+  // ---------- Homografi ----------
+  function solve(A, b) {               // Gauss eliminasyonu (kısmi pivot)
+    const n = b.length;
+    for (let i = 0; i < n; i++) {
+      let p = i;
+      for (let k = i + 1; k < n; k++) if (Math.abs(A[k][i]) > Math.abs(A[p][i])) p = k;
+      [A[i], A[p]] = [A[p], A[i]]; [b[i], b[p]] = [b[p], b[i]];
+      const d = A[i][i]; if (Math.abs(d) < 1e-12) return null;
+      for (let k = i + 1; k < n; k++) {
+        const f = A[k][i] / d; if (!f) continue;
+        for (let j = i; j < n; j++) A[k][j] -= f * A[i][j];
+        b[k] -= f * b[i];
+      }
+    }
+    const x = new Array(n).fill(0);
+    for (let i = n - 1; i >= 0; i--) {
+      let s = b[i]; for (let j = i + 1; j < n; j++) s -= A[i][j] * x[j];
+      x[i] = s / A[i][i];
+    }
+    return x;
+  }
+  function normT(pts) {
+    let mx = 0, my = 0; for (const p of pts) { mx += p[0]; my += p[1]; }
+    mx /= pts.length; my /= pts.length;
+    let d = 0; for (const p of pts) d += Math.hypot(p[0] - mx, p[1] - my);
+    d = (d / pts.length) || 1; const s = Math.SQRT2 / d;
+    return { s, mx, my };
+  }
+  // src: model noktaları, dst: görüntü noktaları  (en küçük kareler, N>=4)
+  function fitH(src, dst) {
+    if (src.length < 4) return null;
+    const ts = normT(src), td = normT(dst);
+    const A = Array.from({ length: 8 }, () => new Array(8).fill(0)), v = new Array(8).fill(0);
+    const add = (r, b) => { for (let i = 0; i < 8; i++) { v[i] += r[i] * b; for (let j = 0; j < 8; j++) A[i][j] += r[i] * r[j]; } };
+    for (let i = 0; i < src.length; i++) {
+      const x = (src[i][0] - ts.mx) * ts.s, y = (src[i][1] - ts.my) * ts.s;
+      const u = (dst[i][0] - td.mx) * td.s, w = (dst[i][1] - td.my) * td.s;
+      add([x, y, 1, 0, 0, 0, -u * x, -u * y], u);
+      add([0, 0, 0, x, y, 1, -w * x, -w * y], w);
+    }
+    const h = solve(A, v); if (!h) return null;
+    // H = Td^-1 * Hn * Ts
+    const Hn = [h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], 1];
+    const Ts = [ts.s, 0, -ts.s * ts.mx, 0, ts.s, -ts.s * ts.my, 0, 0, 1];
+    const Tdi = [1 / td.s, 0, td.mx, 0, 1 / td.s, td.my, 0, 0, 1];
+    const H = mul(Tdi, mul(Hn, Ts));
+    for (let i = 0; i < 9; i++) H[i] /= H[8];
+    return H.every(Number.isFinite) ? H : null;
+  }
+  function mul(a, b) {
+    const r = new Array(9);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++)
+      r[i * 3 + j] = a[i * 3] * b[j] + a[i * 3 + 1] * b[3 + j] + a[i * 3 + 2] * b[6 + j];
+    return r;
+  }
+  function apply(H, x, y) {
+    const d = H[6] * x + H[7] * y + H[8];
+    return [(H[0] * x + H[1] * y + H[2]) / d, (H[3] * x + H[4] * y + H[5]) / d];
+  }
+  const CORNERS = [[0, 0], [4, 0], [4, 11 * ROW], [0, 11 * ROW]];   // 1-A, 1-E, 12-E, 12-A merkezleri
+  const fromCorners = (pts) => fitH(CORNERS, pts);
+  const corners = (H) => CORNERS.map(([x, y]) => apply(H, x, y));
+
+  // ---------- Kutu adaylarını bul ----------
+  function binarize(g, W, H) {
+    const r = Math.max(8, Math.round(Math.max(W, H) / 70));
+    const W1 = W + 1, I = new Float64Array(W1 * (H + 1));
+    for (let y = 0; y < H; y++) {
+      let s = 0;
+      for (let x = 0; x < W; x++) { s += g[y * W + x]; I[(y + 1) * W1 + x + 1] = I[y * W1 + x + 1] + s; }
+    }
+    const out = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) {
+      const y0 = Math.max(0, y - r), y1 = Math.min(H, y + r + 1);
+      for (let x = 0; x < W; x++) {
+        const x0 = Math.max(0, x - r), x1 = Math.min(W, x + r + 1);
+        const sum = I[y1 * W1 + x1] - I[y0 * W1 + x1] - I[y1 * W1 + x0] + I[y0 * W1 + x0];
+        const area = (y1 - y0) * (x1 - x0);
+        if (g[y * W + x] * area < sum * 0.85) out[y * W + x] = 1;
+      }
+    }
+    return out;
+  }
+
+  function candidates(g, W, H) {
+    const bin = binarize(g, W, H);
+    const lab = new Int32Array(W * H), stack = new Int32Array(W * H);
+    const maxS = Math.max(W, H) / 9, minS = 7;
+    const out = [];
+    let id = 0;
+    for (let p0 = 0; p0 < W * H; p0++) {
+      if (!bin[p0] || lab[p0]) continue;
+      id++; let sp = 0; stack[sp++] = p0; lab[p0] = id;
+      let minx = W, maxx = 0, miny = H, maxy = 0, cnt = 0;
+      while (sp) {
+        const p = stack[--sp], x = p % W, y = (p - x) / W; cnt++;
+        if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+        for (let dy = -1; dy <= 1; dy++) {
+          const yy = y + dy; if (yy < 0 || yy >= H) continue;
+          for (let dx = -1; dx <= 1; dx++) {
+            const xx = x + dx; if (xx < 0 || xx >= W) continue;
+            const q = yy * W + xx; if (bin[q] && !lab[q]) { lab[q] = id; stack[sp++] = q; }
+          }
+        }
+      }
+      const w = maxx - minx + 1, h = maxy - miny + 1;
+      if (w < minS || h < minS || w > maxS || h > maxS) continue;
+      const ar = w / h; if (ar < 0.72 || ar > 1.39) continue;
+      const fill = cnt / (w * h); if (fill < 0.1) continue;
+      // dört kenarın da çizgiyle kaplı olması (harf/rakamları eler)
+      const t = Math.max(2, Math.round(Math.min(w, h) * 0.25));
+      const cov = (horiz, from, to) => {
+        let c = 0; const n = horiz ? w : h;
+        for (let i = 0; i < n; i++) {
+          let hit = false;
+          for (let k = from; k < to && !hit; k++) {
+            const x = horiz ? minx + i : minx + k, y = horiz ? miny + k : miny + i;
+            if (lab[y * W + x] === id) hit = true;
+          }
+          if (hit) c++;
+        }
+        return c / n;
+      };
+      const cTop = cov(true, 0, t), cBot = cov(true, h - t, h), cL = cov(false, 0, t), cR = cov(false, w - t, w);
+      if (Math.min(cTop, cBot, cL, cR) < 0.55) continue;
+      out.push({ x: (minx + maxx) / 2, y: (miny + maxy) / 2, s: (w + h) / 2, fill });
+    }
+    return out;
+  }
+
+  // ---------- Izgarayı (12x5 + Puan) eşleştir ----------
+  function nearest(cands, x, y, tol) {
+    let best = null, bd = tol;
+    for (const c of cands) { const d = Math.hypot(c.x - x, c.y - y); if (d < bd) { bd = d; best = c; } }
+    return best;
+  }
+  function modelPoints() {
+    const pts = [];
+    for (let r = 0; r < NR; r++) { for (let c = 0; c < NC; c++) pts.push({ r, c, m: modelXY(r, c) }); pts.push({ r, c: 'P', m: modelXY(r, 'P') }); }
+    return pts;
+  }
+  const MODEL = modelPoints();
+
+  function evaluate(H, cands) {
+    let score = 0, puan = 0, rs = 0, rn = 0; const pairs = [];
+    for (const p of MODEL) {
+      const [x, y] = apply(H, p.m[0], p.m[1]);
+      const [x2, y2] = apply(H, p.m[0] + 1, p.m[1]);
+      const tol = 0.22 * Math.hypot(x2 - x, y2 - y);
+      const c = nearest(cands, x, y, tol);
+      if (c) {
+        score++; pairs.push([p.m, [c.x, c.y], c]);
+        if (p.c === 'P') puan++;
+        if (c.fill < 0.55) { rs += Math.hypot(c.x - x, c.y - y) / Math.hypot(x2 - x, y2 - y); rn++; }
+      }
+    }
+    // başlık satırı (A..E harfleri) ve toplam satırında kutu olmamalı
+    for (const r of [-1, 12]) for (let c = 0; c < NC; c++) {
+      const [x, y] = apply(H, c, r * ROW), [x2, y2] = apply(H, c + 1, r * ROW);
+      if (nearest(cands, x, y, 0.22 * Math.hypot(x2 - x, y2 - y))) score -= 2;
+    }
+    return { score, pairs, puan, resid: rn ? rs / rn : 1 };
+  }
+
+  function detect(g, W, H) {
+    const all = candidates(g, W, H);
+    if (all.length < 20) return { ok: false, reason: 'Kutu bulunamadı', n: all.length, cands: all };
+    // en sık görülen kutu boyu
+    let S = 0, bestCnt = 0;
+    for (const c of all) {
+      let n = 0; for (const d of all) if (d.s >= c.s * 0.8 && d.s <= c.s * 1.25) n++;
+      if (n > bestCnt || (n === bestCnt && c.s > S)) { bestCnt = n; S = c.s; }
+    }
+    const C = all.filter(c => c.s >= S * 0.72 && c.s <= S * 1.4);
+    // baskın açı (en yakın komşu doğrultusu, mod 90°)
+    const hist = new Float64Array(90);
+    for (const a of C) {
+      let b = null, bd = 1e9;
+      for (const c of C) { if (c === a) continue; const d = Math.hypot(c.x - a.x, c.y - a.y); if (d < bd) { bd = d; b = c; } }
+      if (!b || bd > 4 * S) continue;
+      let ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI; ang = ((ang % 90) + 90) % 90;
+      for (let k = -3; k <= 3; k++) hist[(Math.round(ang) + k + 90) % 90] += 4 - Math.abs(k);
+    }
+    let th = 0; for (let i = 1; i < 90; i++) if (hist[i] > hist[th]) th = i;
+
+    let best = null;
+    for (let k = 0; k < 4; k++) {
+      const ang = -(th + 90 * k) * Math.PI / 180, cs = Math.cos(ang), sn = Math.sin(ang);
+      const P = C.map(c => ({ c, x: c.x * cs - c.y * sn, y: c.x * sn + c.y * cs }));
+      // sağ komşu bağlantıları
+      const right = new Array(P.length).fill(-1), inc = new Array(P.length).fill(-1);
+      for (let i = 0; i < P.length; i++) {
+        let bj = -1, bdx = 1e9;
+        for (let j = 0; j < P.length; j++) {
+          if (i === j) continue;
+          const dx = P[j].x - P[i].x, dy = P[j].y - P[i].y, s = (P[i].c.s + P[j].c.s) / 2;
+          if (dx < 1.6 * s || dx > 4.4 * s || Math.abs(dy) > 0.25 * dx) continue;
+          const rs = P[j].c.s / P[i].c.s; if (rs < 0.7 || rs > 1.43) continue;
+          if (dx < bdx) { bdx = dx; bj = j; }
+        }
+        if (bj >= 0) {
+          if (inc[bj] >= 0) {
+            const o = inc[bj];
+            if (Math.abs(P[i].y - P[bj].y) < Math.abs(P[o].y - P[bj].y)) { right[o] = -1; inc[bj] = i; right[i] = bj; }
+          } else { inc[bj] = i; right[i] = bj; }
+        }
+      }
+      const chains = [];
+      for (let i = 0; i < P.length; i++) {
+        if (inc[i] >= 0) continue;
+        const ch = [i]; let j = i;
+        while (right[j] >= 0 && ch.length < 50) { j = right[j]; ch.push(j); }
+        if (ch.length !== 5) continue;
+        const sp = []; for (let q = 1; q < 5; q++) sp.push(P[ch[q]].x - P[ch[q - 1]].x);
+        if (Math.max(...sp) / Math.min(...sp) > 1.35) continue;
+        const cx = ch.reduce((s, q) => s + P[q].x, 0) / 5, cy = ch.reduce((s, q) => s + P[q].y, 0) / 5;
+        const ux = (P[ch[4]].x - P[ch[0]].x) / 4, uy = (P[ch[4]].y - P[ch[0]].y) / 4;
+        chains.push({ ch, cx, cy, ux, uy, len: Math.hypot(ux, uy) });
+      }
+      if (!chains.length) continue;
+      // satır numarası ataması: ardışık satırlar arası (perspektife göre normalize) boşluklardan
+      chains.sort((a, b) => a.cy - b.cy);
+      const gapOf = (a, b) => Math.hypot(b.cx - a.cx, b.cy - a.cy) / ((a.len + b.len) / 2);
+      const gaps = [];
+      for (let q = 1; q < chains.length; q++) gaps.push(gapOf(chains[q - 1], chains[q]));
+      const minG = gaps.length ? Math.min(...gaps.filter(x => x > 0.25)) : ROW;
+      const small = gaps.filter(x => x > 0.25 && x <= minG * 1.45).sort((a, b) => a - b);
+      const base = small.length ? small[small.length >> 1] : ROW;
+      if (base < ROW * 0.45 || base > ROW * 1.8) continue;
+      const bestSet = new Map(); bestSet.set(0, { b: chains[0] });
+      let prev = chains[0], prevK = 0;
+      for (let q = 1; q < chains.length; q++) {
+        const b = chains[q], r = gapOf(prev, b) / base, kk = Math.round(r);
+        const L = (prev.len + b.len) / 2, ux = prev.ux / prev.len, uy = prev.uy / prev.len;
+        const along = ((b.cx - prev.cx) * ux + (b.cy - prev.cy) * uy) / L;
+        if (kk < 1 || Math.abs(r - kk) > 0.3 || Math.abs(along) > 0.3 + 0.35 * kk) continue;
+        prevK += kk; prev = b; bestSet.set(prevK, { b });
+      }
+      const allK = [...bestSet.keys()];
+      const windows = [...new Set(allK.map(k0 => allK.filter(k => k >= k0 && k <= k0 + 11).join(',')))]
+        .map(w => w.split(',').map(Number));
+      for (const ks of windows) {
+      const mn = Math.min(...ks), mx = Math.max(...ks);
+      for (let o = -mn; o <= 11 - mx; o++) {
+        const src = [], dst = [];
+        for (const kk of ks) bestSet.get(kk).b.ch.forEach((q, c) => { src.push(modelXY(kk + o, c)); dst.push([P[q].c.x, P[q].c.y]); });
+        let Hm = fitH(src, dst); if (!Hm) continue;
+        let ev = evaluate(Hm, C);
+        // iyileştirme: tüm eşleşen noktalarla yeniden uydur
+        for (let it = 0; it < 3 && ev.pairs.length >= 8; it++) {
+          const hollow = ev.pairs.filter(p => p[2].fill < 0.55);
+          const use = hollow.length >= 12 ? hollow : ev.pairs;
+          const H2 = fitH(use.map(p => p[0]), use.map(p => p[1])); if (!H2) break;
+          const ev2 = evaluate(H2, C); if (ev2.score < ev.score) break;
+          Hm = H2; ev = ev2;
+        }
+        if (!best || ev.score > best.score || (ev.score === best.score && ev.resid < best.resid))
+          best = { score: ev.score, H: Hm, puan: ev.puan, resid: ev.resid };
+      }
+      }
+    }
+    if (!best) return { ok: false, reason: 'Cevap tablosu bulunamadı', n: all.length, cands: all };
+    const ok = best.score >= 62 && best.puan >= 9 && best.resid < 0.1;
+    return { ok, score: best.score, puan: best.puan, resid: best.resid, H: best.H, cands: all, reason: ok ? '' : 'Tablo güvenilir biçimde eşleşmedi' };
+  }
+
+  // ---------- Kutuları oku ----------
+  function sample(g, W, H, x, y) {
+    if (x < 0 || y < 0 || x > W - 2 || y > H - 2) return 255;
+    const x0 = x | 0, y0 = y | 0, fx = x - x0, fy = y - y0, p = y0 * W + x0;
+    return (g[p] * (1 - fx) + g[p + 1] * fx) * (1 - fy) + (g[p + W] * (1 - fx) + g[p + W + 1] * fx) * fy;
+  }
+  function meanPatch(g, W, H, Hm, cx, cy, half, n = 7, off = [0, 0]) {
+    let s = 0;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const mx = cx + (i / (n - 1) * 2 - 1) * half, my = cy + (j / (n - 1) * 2 - 1) * half;
+      const [x, y] = apply(Hm, mx, my); s += sample(g, W, H, x + off[0], y + off[1]);
+    }
+    return s / (n * n);
+  }
+  function otsu(vals) {
+    const bins = 100, hist = new Array(bins).fill(0);
+    for (const v of vals) hist[Math.min(bins - 1, Math.max(0, Math.floor(v * bins)))]++;
+    const tot = vals.length; let sum = 0; for (let i = 0; i < bins; i++) sum += i * hist[i];
+    let sB = 0, wB = 0, best = 0, thr = 0;
+    for (let i = 0; i < bins; i++) {
+      wB += hist[i]; if (!wB) continue; const wF = tot - wB; if (!wF) break;
+      sB += i * hist[i]; const mB = sB / wB, mF = (sum - sB) / wF, b = wB * wF * (mB - mF) ** 2;
+      if (b > best) { best = b; thr = i; }
+    }
+    return (thr + 1) / bins;
+  }
+  // Her kutuyu, yakınında algılanmış gerçek kutu varsa onun merkezine yapıştır
+  function snapOffset(Hm, cands, c, y) {
+    if (!cands || !cands.length) return [0, 0];
+    const [x0, y0] = apply(Hm, c, y), [x1, y1] = apply(Hm, c + 1, y);
+    const u = Math.hypot(x1 - x0, y1 - y0);
+    let best = null, bd = 0.2 * u;
+    for (const k of cands) {
+      if (k.s < BOX * u * 0.65 || k.s > BOX * u * 1.5) continue;
+      const d = Math.hypot(k.x - x0, k.y - y0); if (d < bd) { bd = d; best = k; }
+    }
+    return best ? [best.x - x0, best.y - y0] : [0, 0];
+  }
+  function read(g, W, H, Hm, cands) {
+    const d = [];
+    for (let r = 0; r < NR; r++) {
+      const row = [];
+      for (let c = 0; c < NC; c++) {
+        const y = r * ROW;
+        const off = snapOffset(Hm, cands, c, y);
+        const inner = meanPatch(g, W, H, Hm, c, y, 0.115, 7, off);
+        const refs = [];
+        if (c > 0) refs.push(meanPatch(g, W, H, Hm, c - 0.5, y, 0.07, 5, off));
+        if (c < NC - 1) refs.push(meanPatch(g, W, H, Hm, c + 0.5, y, 0.07, 5, off));
+        const white = Math.max(...refs, 1);
+        row.push(Math.max(0, Math.min(1, 1 - inner / white)));
+      }
+      d.push(row);
+    }
+    const flat = d.flat(), mx = Math.max(...flat);
+    let thr = mx < 0.22 ? 0.3 : otsu(flat);
+    thr = Math.min(0.42, Math.max(0.2, thr));
+    const rows = d.map(row => {
+      const marked = [], unsure = [];
+      row.forEach((v, c) => { if (v >= thr) marked.push(c); if (Math.abs(v - thr) < 0.07) unsure.push(c); });
+      return { dark: row, marked, unsure };
+    });
+    return { rows, thr };
+  }
+
+  return { detect, read, fromCorners, corners, apply, ROW, BOX, PUAN_X, NR, NC };
+})();
+if (typeof module !== 'undefined') module.exports = OMR;
+</script>
+
+<!-- ===================== Arayüz ===================== -->
+<script>
+(() => {
+  const DEFAULT_KEY = ['C', 'B', 'D', 'A', 'E', 'B', 'D', 'C', 'E', 'A', 'B', 'E'];
+  const DEFAULT_PTS = [7, 7, 7, 7, 7, 9, 9, 9, 9, 9, 9, 11];
+  const L = ['A', 'B', 'C', 'D', 'E'];
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  let key = store.get('omr-key-v1', null) || { ans: DEFAULT_KEY.slice(), pts: DEFAULT_PTS.slice() };
+  let list = store.get('omr-list-v1', []);
+  const S = { img: null, H: null, det: null, read: null, override: {}, edit: false, full: false, view: null, drag: -1, dragPt: null };
+
+  // ---------- Fotoğraf yükleme ----------
+  async function decode(file) {
+    try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+    catch (e) {
+      return await new Promise((res, rej) => {
+        const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('Görüntü açılamadı'));
+        im.src = URL.createObjectURL(file);
+      });
+    }
+  }
+  async function onFile(ev) {
+    const file = ev.target.files && ev.target.files[0]; ev.target.value = '';
+    if (!file) return;
+    $('busy').classList.remove('hidden');
+    await new Promise(r => setTimeout(r, 30));
+    try {
+      const bmp = await decode(file);
+      const w0 = bmp.width || bmp.naturalWidth, h0 = bmp.height || bmp.naturalHeight;
+      const sc = Math.min(1, 1800 / Math.max(w0, h0));
+      const W = Math.round(w0 * sc), H = Math.round(h0 * sc);
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const cx = cv.getContext('2d', { willReadFrequently: true }); cx.drawImage(bmp, 0, 0, W, H);
+      const data = cx.getImageData(0, 0, W, H).data, g = new Uint8Array(W * H);
+      for (let i = 0, j = 0; i < g.length; i++, j += 4) g[i] = (data[j] * 77 + data[j + 1] * 150 + data[j + 2] * 29) >> 8;
+      S.img = { g, W, H, canvas: cv };
+      S.override = {}; S.full = false;
+      runDetect();
+      $('result').classList.remove('hidden');
+      $('sname').value = ''; $('sno').value = '';
+      $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      alert('Fotoğraf işlenemedi: ' + e.message);
+    } finally { $('busy').classList.add('hidden'); }
+  }
+  function runDetect() {
+    const { g, W, H } = S.img;
+    const det = OMR.detect(g, W, H);
+    S.det = det;
+    if (det.ok) { S.H = det.H; setEdit(false); }
+    else {
+      S.H = det.H && det.score > 20 ? det.H : OMR.fromCorners([[W * .3, H * .35], [W * .62, H * .35], [W * .62, H * .7], [W * .3, H * .7]]);
+      S.full = true; setEdit(true);
+    }
+    S.view = null;
+    update();
+  }
+
+  // ---------- Hesaplama ----------
+  function compute() {
+    const rd = S.read, res = [];
+    let total = 0, nOk = 0, nBad = 0, nBlank = 0, flags = 0;
+    for (let r = 0; r < 12; r++) {
+      const row = rd.rows[r];
+      let ans, src = 'auto', flag = '';
+      if (r in S.override) { ans = S.override[r]; src = 'manual'; }
+      else if (row.marked.length === 1) ans = L[row.marked[0]];
+      else if (row.marked.length === 0) ans = '';
+      else { ans = 'Ç'; flag = 'Birden fazla işaret'; }
+      if (src === 'auto' && !flag && row.unsure.length) flag = 'Belirsiz işaret';
+      const correct = ans !== '' && ans === key.ans[r];
+      const pts = correct ? (+key.pts[r] || 0) : 0;
+      total += pts;
+      if (correct) nOk++; else if (ans === '' ) nBlank++; else nBad++;
+      if (flag) flags++;
+      res.push({ r, ans, src, flag, correct, pts });
+    }
+    return { res, total, nOk, nBad, nBlank, flags };
+  }
+
+  function update() {
+    if (!S.img) return;
+    S.read = OMR.read(S.img.g, S.img.W, S.img.H, S.H, S.det && S.det.cands);
+    const c = compute(); S.last = c;
+    const maxPts = key.pts.reduce((a, b) => a + (+b || 0), 0);
+    $('score').innerHTML = `${fmt(c.total)}<small> / ${fmt(maxPts)}</small>`;
+    $('pills').innerHTML = `<span class="pill ok">${c.nOk} doğru</span><span class="pill bad">${c.nBad} yanlış</span><span class="pill blank">${c.nBlank} boş</span>`;
+    let st = '';
+    if (!S.det.ok && S.edit) st = `<div class="alert bad"><b>Tablo otomatik bulunamadı.</b> “Hizalamayı düzelt” açık: dört noktayı 1-A, 1-E, 12-E ve 12-A kutularının ortasına taşıyın ya da daha net bir fotoğraf çekin.</div>`;
+    else if (c.flags) st = `<div class="alert warn"><b>${c.flags} soruda kontrol gerekiyor</b> (sarı satırlar). Fotoğrafa bakıp doğru şıkka dokunun.</div>`;
+    else st = `<div class="alert good">Tablo ${S.det.ok && !S.moved ? 'otomatik bulundu' : 'hizalandı'}, tüm işaretler net okundu. Görseldeki mavi çerçevelerin kutulara oturduğunu bir bakışta kontrol edin.</div>`;
+    $('status').innerHTML = st;
+    renderRows(c);
+    draw();
+  }
+  const fmt = (n) => (Math.round(n * 100) / 100).toString().replace('.', ',');
+
+  function renderRows(c) {
+    const tb = $('rows'); tb.innerHTML = '';
+    for (const x of c.res) {
+      const tr = document.createElement('tr');
+      tr.className = (x.correct ? 'row-ok' : (x.ans ? 'row-bad' : '')) + (x.flag ? ' flag' : '');
+      const opts = L.map(l => {
+        const sel = x.ans === l;
+        const cls = ['opt', sel ? 'sel' : '', sel ? (x.correct ? 'ok' : 'bad') : '', l === key.ans[x.r] ? 'key' : ''].join(' ');
+        return `<button class="${cls}" data-r="${x.r}" data-l="${l}">${l}</button>`;
+      }).join('');
+      const tag = x.flag ? `<div><span class="tag w">${x.flag}</span></div>` : (x.src === 'manual' ? `<div><span class="tag m">elle düzeltildi</span></div>` : '');
+      tr.innerHTML = `<td><b>${x.r + 1}</b></td><td><span class="opts">${opts}</span>${tag}</td><td>${key.ans[x.r]}</td><td class="res">${x.correct ? '+' + fmt(x.pts) : (x.ans === 'Ç' ? '0 (çift)' : x.ans ? '0' : '—')}</td>`;
+      tb.appendChild(tr);
+    }
+  }
+  $('rows').addEventListener('click', (e) => {
+    const b = e.target.closest('button.opt'); if (!b) return;
+    const r = +b.dataset.r, l = b.dataset.l;
+    const cur = S.last.res[r].ans;
+    S.override[r] = cur === l ? '' : l;
+    update();
+  });
+
+  // ---------- Çizim ----------
+  function viewRect() {
+    const { W, H } = S.img;
+    if (S.full) return { x: 0, y: 0, w: W, h: H };
+    if (S.edit && S.view) return S.view;
+    const pts = [];
+    for (const [mx, my] of [[-1.3, -0.9], [OMR.PUAN_X + 0.9, -0.9], [OMR.PUAN_X + 0.9, 11 * OMR.ROW + 0.9], [-1.3, 11 * OMR.ROW + 0.9]]) pts.push(OMR.apply(S.H, mx, my));
+    let x0 = Math.min(...pts.map(p => p[0])), x1 = Math.max(...pts.map(p => p[0]));
+    let y0 = Math.min(...pts.map(p => p[1])), y1 = Math.max(...pts.map(p => p[1]));
+    x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(W, x1); y1 = Math.min(H, y1);
+    if (!(x1 - x0 > 20 && y1 - y0 > 20)) return { x: 0, y: 0, w: W, h: H };
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  }
+  function draw() {
+    const cv = $('view'), ctx = cv.getContext('2d');
+    const v = viewRect(); S.view = v;
+    const outW = Math.min(1400, Math.max(700, Math.round(v.w)));
+    const sc = outW / v.w;
+    cv.width = outW; cv.height = Math.round(v.h * sc);
+    ctx.drawImage(S.img.canvas, v.x, v.y, v.w, v.h, 0, 0, cv.width, cv.height);
+    const T = (x, y) => [(x - v.x) * sc, (y - v.y) * sc];
+    const P = (mx, my) => T(...OMR.apply(S.H, mx, my));
+    const half = OMR.BOX / 2 + 0.04;
+    const quad = (cx, cy, h) => [P(cx - h, cy - h), P(cx + h, cy - h), P(cx + h, cy + h), P(cx - h, cy + h)];
+    const path = (q) => { ctx.beginPath(); ctx.moveTo(...q[0]); for (let i = 1; i < 4; i++) ctx.lineTo(...q[i]); ctx.closePath(); };
+    const lw = Math.max(2, cv.width / 400);
+    const res = S.last.res;
+    for (let r = 0; r < 12; r++) {
+      for (let c = 0; c < 5; c++) {
+        const q = quad(c, r * OMR.ROW, half);
+        const x = res[r], l = L[c];
+        const studentPick = x.ans === l, isKey = key.ans[r] === l;
+        const unsure = x.src === 'auto' && S.read.rows[r].unsure.includes(c);
+        path(q);
+        if (studentPick) {
+          ctx.fillStyle = x.correct ? 'rgba(22,163,74,.35)' : 'rgba(220,38,38,.35)'; ctx.fill();
+          ctx.strokeStyle = x.correct ? '#16a34a' : '#dc2626'; ctx.lineWidth = lw * 1.6; ctx.setLineDash([]); ctx.stroke();
+        } else if (isKey && !x.correct) {
+          ctx.strokeStyle = '#16a34a'; ctx.lineWidth = lw * 1.4; ctx.setLineDash([lw * 3, lw * 2]); ctx.stroke(); ctx.setLineDash([]);
+        } else {
+          ctx.strokeStyle = 'rgba(37,99,235,.85)'; ctx.lineWidth = lw * 0.8; ctx.setLineDash([]); ctx.stroke();
+        }
+        if (unsure || (x.flag && x.src === 'auto' && S.read.rows[r].marked.includes(c))) {
+          path(quad(c, r * OMR.ROW, half + 0.07)); ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = lw * 1.5; ctx.stroke();
+        }
+      }
+      // Puan sütunu kutusu (hizalama göstergesi)
+      path(quad(OMR.PUAN_X, r * OMR.ROW, half)); ctx.strokeStyle = 'rgba(37,99,235,.5)'; ctx.lineWidth = lw * 0.7; ctx.stroke();
+      // soru no
+      const [tx, ty] = P(-0.62, r * OMR.ROW);
+      const fs = Math.max(12, Math.hypot(...[0, 1].map(i => P(1, 0)[i] - P(0, 0)[i])) * 0.28);
+      ctx.font = `700 ${fs}px system-ui,sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = res[r].flag ? '#f59e0b' : (res[r].correct ? '#16a34a' : (res[r].ans ? '#dc2626' : '#64748b'));
+      ctx.fillText(res[r].correct ? '✓' : (res[r].ans ? '✗' : '–'), tx - fs * 0.2, ty);
+    }
+    if (S.edit) {
+      const cs = OMR.corners(S.H).map(p => T(...p));
+      const R = Math.max(10, cv.width / 55);
+      cs.forEach((p, i) => {
+        ctx.beginPath(); ctx.arc(p[0], p[1], R, 0, Math.PI * 2);
+        ctx.fillStyle = i === S.drag ? 'rgba(249,115,22,.55)' : 'rgba(249,115,22,.3)'; ctx.fill();
+        ctx.lineWidth = lw; ctx.strokeStyle = '#ea580c'; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(p[0] - R * .6, p[1]); ctx.lineTo(p[0] + R * .6, p[1]); ctx.moveTo(p[0], p[1] - R * .6); ctx.lineTo(p[0], p[1] + R * .6); ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.font = `700 ${R * .9}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(['1-A', '1-E', '12-E', '12-A'][i], p[0], p[1] - R * 1.05);
+      });
+      if (S.drag >= 0) drawLoupe(ctx, cs[S.drag], sc, v);
+    }
+  }
+  function drawLoupe(ctx, p, sc, v) {
+    const cv = ctx.canvas, size = Math.min(cv.width, cv.height) * 0.36, zoom = 3;
+    const left = p[0] < cv.width / 2 ? cv.width - size - 10 : 10, top = 10;
+    const srcW = size / zoom / sc;
+    const ix = v.x + p[0] / sc, iy = v.y + p[1] / sc;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(left, top, size, size); ctx.clip();
+    ctx.drawImage(S.img.canvas, ix - srcW / 2, iy - srcW / 2, srcW, srcW, left, top, size, size);
+    ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(left + size / 2, top); ctx.lineTo(left + size / 2, top + size);
+    ctx.moveTo(left, top + size / 2); ctx.lineTo(left + size, top + size / 2); ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.strokeRect(left, top, size, size);
+  }
+
+  // ---------- Köşe sürükleme ----------
+  const cv = $('view');
+  function toImg(e) {
+    const b = cv.getBoundingClientRect(), v = S.view;
+    const px = (e.clientX - b.left) / b.width * cv.width, py = (e.clientY - b.top) / b.height * cv.height;
+    const sc = cv.width / v.w;
+    return { px, py, x: v.x + px / sc, y: v.y + py / sc, sc };
+  }
+  cv.addEventListener('pointerdown', (e) => {
+    if (!S.edit) return;
+    const m = toImg(e), cs = OMR.corners(S.H);
+    let bi = -1, bd = 1e9;
+    cs.forEach((p, i) => { const d = Math.hypot((p[0] - m.x) * m.sc, (p[1] - m.y) * m.sc); if (d < bd) { bd = d; bi = i; } });
+    const b = cv.getBoundingClientRect(), hitR = 46 * cv.width / b.width;
+    if (bd > hitR) return;
+    e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    S.drag = bi; S.dragOff = [cs[bi][0] - m.x, cs[bi][1] - m.y]; S.cs = cs;
+    draw();
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (S.drag < 0) return; e.preventDefault();
+    const m = toImg(e);
+    S.cs[S.drag] = [m.x + S.dragOff[0], m.y + S.dragOff[1]];
+    const H2 = OMR.fromCorners(S.cs); if (H2) { S.H = H2; S.moved = true; }
+    update();
+  });
+  const end = () => { if (S.drag >= 0) { S.drag = -1; update(); } };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+
+  function setEdit(on) {
+    S.edit = on;
+    $('editBtn').classList.toggle('on', on);
+    $('editBtn').textContent = on ? '✓ Hizalama bitti' : '✥ Hizalamayı düzelt';
+    $('editHint').classList.toggle('hidden', !on);
+    $('redetectBtn').classList.toggle('hidden', !on);
+    cv.classList.toggle('editing', on);
+    $('zoomBtn').textContent = S.full ? 'Tabloya yakınlaş' : 'Tüm fotoğraf';
+  }
+  $('editBtn').onclick = () => { setEdit(!S.edit); if (!S.edit) S.view = null; else S.view = viewRect(); draw(); };
+  $('zoomBtn').onclick = () => { S.full = !S.full; S.view = null; setEdit(S.edit); if (S.edit) S.view = viewRect(); draw(); };
+  $('redetectBtn').onclick = () => { S.moved = false; runDetect(); };
+
+  // ---------- Kayıt listesi ----------
+  function renderList() {
+    $('listCount').textContent = list.length ? `(${list.length})` : '';
+    if (!list.length) { $('listWrap').innerHTML = '<p class="hint" style="margin:0">Henüz kayıt yok.</p>'; return; }
+    const avg = list.reduce((a, b) => a + b.score, 0) / list.length;
+    $('listWrap').innerHTML = `<table class="listtable"><thead><tr><th>Öğrenci</th><th>Cevaplar</th><th>Puan</th><th></th></tr></thead><tbody>${
+      list.map((s, i) => `<tr><td>${esc(s.name || '—')}${s.no ? `<div class="muted" style="font-size:.8rem">${esc(s.no)}</div>` : ''}</td><td style="font-family:ui-monospace,monospace;font-size:.85rem;letter-spacing:1px">${s.answers.map(a => a || '-').join('')}</td><td><b>${fmt(s.score)}</b></td><td><button class="btn small" data-del="${i}" aria-label="Sil">✕</button></td></tr>`).join('')
+    }</tbody></table><p class="hint">Ortalama: <b>${fmt(Math.round(avg * 100) / 100)}</b></p>`;
+  }
+  const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  $('listWrap').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-del]'); if (!b) return;
+    if (!confirm('Bu kayıt silinsin mi?')) return;
+    list.splice(+b.dataset.del, 1); store.set('omr-list-v1', list); renderList();
+  });
+  $('saveBtn').onclick = () => {
+    if (!S.last) return;
+    const flagged = S.last.res.filter(x => x.flag).length;
+    if (flagged && !confirm(`${flagged} soruda kontrol uyarısı var. Yine de kaydedilsin mi?`)) return;
+    list.push({ name: $('sname').value.trim(), no: $('sno').value.trim(), score: S.last.total,
+      answers: S.last.res.map(x => x.ans === 'Ç' ? '*' : x.ans), time: new Date().toISOString() });
+    store.set('omr-list-v1', list); renderList();
+    S.img = null; $('result').classList.add('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  $('clearBtn').onclick = () => { if (list.length && confirm('Tüm kayıtlar silinsin mi?')) { list = []; store.set('omr-list-v1', list); renderList(); } };
+  $('csvBtn').onclick = () => {
+    if (!list.length) { alert('Kayıt yok.'); return; }
+    const q = (s) => `"${String(s).replace(/"/g, '""')}"`;
+    const head = ['Ad Soyad', 'Öğrenci No', ...Array.from({ length: 12 }, (_, i) => 'S' + (i + 1)), 'Doğru', 'Puan', 'Tarih'];
+    const lines = [head.map(q).join(';')];
+    for (const s of list) {
+      const nOk = s.answers.filter((a, i) => a && a === key.ans[i]).length;
+      lines.push([s.name, s.no, ...s.answers.map(a => a || ''), nOk, fmt(s.score), new Date(s.time).toLocaleString('tr-TR')].map(q).join(';'));
+    }
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'istatistik_vize_puanlar.csv'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+
+  // ---------- Cevap anahtarı ayarları ----------
+  function renderKey() {
+    const g = $('keygrid'); g.innerHTML = '';
+    for (let i = 0; i < 12; i++) {
+      const lab = document.createElement('label');
+      lab.innerHTML = `<b>${i + 1}</b><select data-i="${i}">${L.map(l => `<option ${l === key.ans[i] ? 'selected' : ''}>${l}</option>`).join('')}</select><input type="number" min="0" step="0.5" value="${key.pts[i]}" data-p="${i}" aria-label="Puan">`;
+      g.appendChild(lab);
+    }
+    const t = key.pts.reduce((a, b) => a + (+b || 0), 0);
+    $('keyTotal').textContent = `Toplam: ${fmt(t)} puan · Anahtar: ${key.ans.join(' ')}`;
+  }
+  $('keygrid').addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.dataset.i !== undefined) key.ans[+t.dataset.i] = t.value;
+    if (t.dataset.p !== undefined) key.pts[+t.dataset.p] = Math.max(0, parseFloat(t.value) || 0);
+    store.set('omr-key-v1', key); renderKey(); if (S.img) update();
+  });
+  $('resetKey').onclick = () => { key = { ans: DEFAULT_KEY.slice(), pts: DEFAULT_PTS.slice() }; store.set('omr-key-v1', key); renderKey(); if (S.img) update(); };
+
+  $('cam').addEventListener('change', onFile);
+  $('gal').addEventListener('change', onFile);
+  renderKey(); renderList();
+})();
+</script>
+</body>
+</html>
